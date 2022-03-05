@@ -1,6 +1,20 @@
 #include <iostream>
+
+#ifdef _WIN32
 #include <conio.h>
 #include <windows.h>
+void ssleep(unsigned miliseconds)
+{
+    Sleep(miliseconds);
+}
+#else
+#include <unistd.h>
+#include <ncurses.h>
+void ssleep(unsigned miliseconds)
+{
+    usleep(miliseconds * 1000);
+}
+#endif
 /*#include <chrono>
 #include <thread>*/
 
@@ -68,7 +82,7 @@ void goDown()
     }
     // p[0] = {0};
     renderChange = true;
-    Sleep(1000 * SPEED);
+    ssleep(1000 * SPEED);
     return;
 }
 
