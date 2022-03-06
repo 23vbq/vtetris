@@ -1,11 +1,17 @@
 #include <iostream>
 
+using namespace std;
+
 #ifdef _WIN32
 #include <conio.h>
 #include <windows.h>
 void ssleep(unsigned miliseconds)
 {
     Sleep(miliseconds);
+}
+void cclear()
+{
+    system("cls");
 }
 #else
 #include <unistd.h>
@@ -14,11 +20,13 @@ void ssleep(unsigned miliseconds)
 {
     usleep(miliseconds * 1000);
 }
+void cclear()
+{
+    system("clear");
+}
 #endif
 /*#include <chrono>
 #include <thread>*/
-
-using namespace std;
 
 #define WIDTH 21
 #define HEIGHT 21
@@ -88,7 +96,7 @@ void goDown()
 
 void render()
 {
-    system("cls");
+    cclear();
     for (int i = 0; i < HEIGHT + 2; i++)
     {
         for (int j = 0; j < WIDTH + 2; j++)
