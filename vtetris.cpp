@@ -44,6 +44,8 @@ int getkey()
 #define borderSymbol "#"
 #define SPEED 0.5
 
+bool terminateApp = false;
+
 bool renderChange = true;
 short p[HEIGHT][WIDTH] = {{0}};
 short offset = 0;
@@ -91,18 +93,20 @@ void moveRight()
 
 void goDown()
 {
-    for (int i = HEIGHT - 1; i >= 0; i--)
+    while (!terminateApp)
     {
-        // p[i] = p[i - 1];
-        for (int j = 0; j < WIDTH - 2; j++)
+        for (int i = HEIGHT - 1; i >= 0; i--)
         {
-            p[i][j] = p[i - 1][j];
+            // p[i] = p[i - 1];
+            for (int j = 0; j < WIDTH - 2; j++)
+            {
+                p[i][j] = p[i - 1][j];
+            }
         }
+        // p[0] = {0};
+        renderChange = true;
+        ssleep(1000 * SPEED);
     }
-    // p[0] = {0};
-    renderChange = true;
-    ssleep(1000 * SPEED);
-    return;
 }
 
 void render()
