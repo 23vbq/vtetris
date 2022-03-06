@@ -13,9 +13,13 @@ void cclear()
 {
     system("cls");
 }
+int getkey()
+{
+    return getch();
+}
 #else
 #include <unistd.h>
-#include <ncurses.h>
+#include <stdio.h>
 void ssleep(unsigned miliseconds)
 {
     usleep(miliseconds * 1000);
@@ -23,6 +27,13 @@ void ssleep(unsigned miliseconds)
 void cclear()
 {
     system("clear");
+}
+int getkey()
+{
+    system("/bin/stty raw");
+    int c = getchar();
+    system("/bin/stty cooked");
+    return c;
 }
 #endif
 /*#include <chrono>
@@ -126,8 +137,8 @@ int main()
     while (true)
     {
         goDown();
-        int handler = getch();
-        // cout << handler << endl;
+        int handler = getkey();
+        //  cout << handler << endl;
         if (handler == 97) // A
         {
             // cout << "Lewo" << endl;
