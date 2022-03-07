@@ -1,6 +1,12 @@
 #include <iostream>
+#include <thread>
 
 using namespace std;
+
+bool renderChange = true;
+bool terminateApp = false;
+
+string renderBuffer = "";
 
 #ifdef _WIN32
 #include <conio.h>
@@ -30,23 +36,20 @@ void cclear()
 }
 int getkey()
 {
+    if (renderChange)
+        return 0;
     system("/bin/stty raw");
     int c = getchar();
     system("/bin/stty cooked");
     return c;
 }
 #endif
-/*#include <chrono>
-#include <thread>*/
 
 #define WIDTH 21
 #define HEIGHT 21
 #define borderSymbol "#"
 #define SPEED 0.5
 
-bool terminateApp = false;
-
-bool renderChange = true;
 short p[HEIGHT][WIDTH] = {{0}};
 short offset = 0;
 
@@ -95,6 +98,7 @@ void goDown()
 {
     while (!terminateApp)
     {
+        ssleep(1000 / SPEED);
         for (int i = HEIGHT - 1; i >= 0; i--)
         {
             // p[i] = p[i - 1];
@@ -105,42 +109,54 @@ void goDown()
         }
         // p[0] = {0};
         renderChange = true;
-        ssleep(1000 * SPEED);
     }
 }
 
 void render()
 {
     cclear();
+    renderBuffer = "";
     for (int i = 0; i < HEIGHT + 2; i++)
     {
         for (int j = 0; j < WIDTH + 2; j++)
         {
             if (i == 0 || i == (HEIGHT + 2) - 1 || j == 0 || j == (WIDTH + 2) - 1)
             {
-                cout << borderSymbol;
+                renderBuffer += borderSymbol;
             }
             else if (p[i - 1][j - 1] == 1)
             {
-                cout << "0";
+                renderBuffer += "0";
             }
             else
             {
-                cout << " ";
+                renderBuffer += " ";
             }
         }
-        cout << endl;
+        renderBuffer += "\n";
     }
-    renderChange = false;
+    cout << renderBuffer;
+    return;
 }
 
-int main()
+void renderListener()
 {
-    p[0][10] = 1;
-    render();
-    while (true)
+    while (!terminateApp)
     {
-        goDown();
+        if (renderChange)
+        {
+            render();
+            ssleep(125);
+            renderChange = false;
+        }
+        ssleep(125);
+    }
+}
+
+void keyEventListener()
+{
+    while (!terminateApp)
+    {
         int handler = getkey();
         //  cout << handler << endl;
         if (handler == 97) // A
@@ -165,11 +181,20 @@ int main()
         }
         else if (handler == 113) // Q - quit
         {
-            return 0;
-        }
-        if (renderChange)
-        {
-            render();
+            terminateApp = true;
         }
     }
+}
+
+int main()
+{
+    p[0][10] = 1;
+    // render();
+    thread renderListenerThread(renderListener);
+    thread keyEventListenerThread(keyEventListener);
+    thread goDownThread(goDown);
+    renderListenerThread.join();
+    goDownThread.join();
+    keyEventListenerThread.join();
+    return 0;
 }
