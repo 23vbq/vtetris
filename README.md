@@ -6,5 +6,5 @@ Build commands:
 ## Windows:
 > g++ vtetris.cpp -o vtetris
 ## Linux:
-> g++ vtetris.cpp -lncurses -o vtetris
+> g++ vtetris.cpp -o vtetris
 
