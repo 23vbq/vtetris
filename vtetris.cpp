@@ -3,11 +3,20 @@
 
 using namespace std;
 
-bool renderChange = true;
-bool terminateApp = false;
+/* Definitions */
+#define WIDTH 21
+#define HEIGHT 21
+#define borderSymbol "#"
+#define SPEED 0.5
 
+/* Render */
+bool renderChange = true;
 string renderBuffer = "";
 
+/* App termination */
+bool terminateApp = false;
+
+/* WIN32 or UNIX */
 #ifdef _WIN32
 #include <conio.h>
 #include <windows.h>
@@ -45,13 +54,14 @@ int getkey()
 }
 #endif
 
-#define WIDTH 21
-#define HEIGHT 21
-#define borderSymbol "#"
-#define SPEED 0.5
-
+// Old version
 short p[HEIGHT][WIDTH] = {{0}};
-short offset = 0;
+// For new version
+short blockElement[5][5] = {{0}};
+short offset_x = 0;
+short offset_y = 0;
+
+int loadPercentage;
 
 void moveLeft()
 {
@@ -186,9 +196,26 @@ void keyEventListener()
     }
 }
 
+void loadGame()
+{
+    loadPercentage = 0;
+    while (loadPercentage < 100)
+    {
+        cclear();
+        cout << "Ladowanie... " << loadPercentage << "%";
+        ssleep(100);
+    }
+    cclear();
+    cout << "Wczytano!";
+    ssleep(2000 / SPEED);
+    return;
+}
+
 int main()
 {
-    p[0][10] = 1;
+    /* Setting test block */
+    p[0][10] = 1;           //  Old method
+    blockElement[2][2] = 1; //  New method
     // render();
     thread renderListenerThread(renderListener);
     thread keyEventListenerThread(keyEventListener);
