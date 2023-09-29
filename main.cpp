@@ -40,9 +40,10 @@ int main(){
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     NewCurrentBlock();
     // Game loop
+    RenderScreen();
     while (game_loop){
-        RenderScreen();
         MoveDown();
+        RenderScreen();
         Sleep(250);
     }
     // Free renderbuffer
