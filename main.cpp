@@ -16,7 +16,7 @@ using namespace std;
 
 HANDLE hConsole;
 bool game_loop = true;
-int input;
+char input;
 
 int Blocks[G_HEIGHT][G_WIDTH] = { {0} };
 int** renderbuffer;
@@ -24,9 +24,13 @@ int** renderbuffer;
 Vector2 currentPos = Vector2::zero;
 vector<Vector2> currentBlocks = vector<Vector2>();
 int currentColor = 0;
+int currentMaxOffsets[3] = {0, 0, 0}; // Left, Right, Down
 
+bool InputHandler();
 void NewCurrentBlock();
 void MoveDown();
+void MoveLeft();
+void MoveRight();
 void MakeCurrentStationary();
 void RenderScreen();
 
@@ -42,6 +46,7 @@ int main(){
     // Game loop
     RenderScreen();
     while (game_loop){
+        InputHandler();
         MoveDown();
         RenderScreen();
         Sleep(250);
@@ -53,13 +58,34 @@ int main(){
     return 0;
 }
 
+bool InputHandler(){
+    if (!_kbhit()) return false;
+
+    input = _getch();
+    if (input == 3){
+        game_loop = false;
+        return true;
+    }
+    if (input < 0){
+        input = _getch();
+        if (input == 75) MoveLeft();
+        else if (input == 77) MoveRight();
+        return true;
+    }
+    return false;
+}
 void NewCurrentBlock(){
     currentPos = Vector2(G_WIDTH / 2, 0);
     currentBlocks.clear();
     currentBlocks.push_back(Vector2(0, 0));
+    currentBlocks.push_back(Vector2(-1, 0));
     currentColor = 4;
+    currentMaxOffsets[0] = -1;
+    currentMaxOffsets[1] = 0;
+    currentMaxOffsets[2] = 0;
 }
 void MoveDown(){
+    currentPos.y += 1;
     for(Vector2 &current : currentBlocks){
         Vector2 blockPos = current + currentPos;
         if (blockPos.y >= G_HEIGHT || Blocks[(int)blockPos.y + 1][(int)blockPos.x] != 0){
@@ -67,7 +93,16 @@ void MoveDown(){
             return;
         }
     }
-    currentPos.y += 1;
+}
+void MoveLeft(){
+    int pos = currentPos.x + currentMaxOffsets[0];
+    if (pos <= 0 || Blocks[(int)currentPos.y][pos - 1] != 0) return;
+    currentPos.x -= 1;
+}
+void MoveRight(){
+    int pos = currentPos.x + currentMaxOffsets[1];
+    if (pos >= G_WIDTH - 1 || Blocks[(int)currentPos.y][pos + 1] != 0) return;
+    currentPos.x += 1;
 }
 void MakeCurrentStationary(){
     for(Vector2 &current : currentBlocks){
