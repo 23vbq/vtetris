@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <set>
 
 #include <windows.h>
 
@@ -32,6 +33,8 @@ void MoveDown();
 void MoveLeft();
 void MoveRight();
 void MakeCurrentStationary();
+bool IsRowValid(int &row);
+void ClearRow(int &row);
 void RenderScreen();
 
 int main(){
@@ -49,7 +52,7 @@ int main(){
         InputHandler();
         MoveDown();
         RenderScreen();
-        Sleep(250);
+        Sleep(100);
     }
     // Free renderbuffer
     for (int i = 0; i < G_HEIGHT; i++)
@@ -78,9 +81,10 @@ void NewCurrentBlock(){
     currentPos = Vector2(G_WIDTH / 2, 0);
     currentBlocks.clear();
     currentBlocks.push_back(Vector2(0, 0));
-    currentBlocks.push_back(Vector2(-1, 0));
+    // currentBlocks.push_back(Vector2(-1, 0));
+    // currentBlocks.push_back(Vector2(1, 0));
     currentColor = 4;
-    currentMaxOffsets[0] = -1;
+    currentMaxOffsets[0] = 0;
     currentMaxOffsets[1] = 0;
     currentMaxOffsets[2] = 0;
 }
@@ -105,10 +109,30 @@ void MoveRight(){
     currentPos.x += 1;
 }
 void MakeCurrentStationary(){
+    set<int> rows = set<int>();
     for(Vector2 &current : currentBlocks){
         Blocks[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
+        rows.insert((int)current.y + (int)currentPos.y);
+    }
+    // Check rows
+    for(int row : rows){
+        if (IsRowValid(row))
+            ClearRow(row);
     }
     NewCurrentBlock();
+}
+bool IsRowValid(int &row){
+    for (int i = 0; i < G_WIDTH; i++)
+        if (Blocks[row][i] == 0) return false;
+    return true;
+}
+void ClearRow(int &row){
+    for (int i = 0; i < G_WIDTH; i++)
+        Blocks[row][i] = 0;
+    for (int i = row - 1; i >= 0; i--){
+        //Blocks[i + 1][0] = Blocks[i][0];
+        memcpy(&Blocks[i + 1][0], &Blocks[i][0], G_WIDTH * sizeof(int));
+    }
 }
 void RenderScreen(){
     // Copy blocks data to buffer
