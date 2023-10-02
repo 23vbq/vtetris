@@ -9,10 +9,13 @@
 #include <vector>
 #include <set>
 #include <ctime>
+#include <string>
+#include <fstream>
 
 #include <windows.h>
 
 #include "vector2.h"
+#include "Block.h"
 
 using namespace std;
 
@@ -20,7 +23,7 @@ HANDLE hConsole;
 bool game_loop = true;
 char input;
 
-int Blocks[G_HEIGHT][G_WIDTH] = { {0} };
+int tilemap[G_HEIGHT][G_WIDTH] = { {0} };
 int** renderbuffer;
 unsigned int blockcolors[] = {
     31, // Blue
@@ -31,11 +34,14 @@ unsigned int blockcolors[] = {
 };
 unsigned short blockcolors_size = 5;
 
+vector<Block> blocks = vector<Block>();
+
 Vector2 currentPos = Vector2::zero;
 vector<Vector2> currentBlocks = vector<Vector2>();
 unsigned int currentColor = 0;
 int currentMaxOffsets[3] = {0, 0, 0}; // Left, Right, Down
 
+void LoadBlockFromFile(string path);
 bool InputHandler();
 void NewCurrentBlock();
 void MoveDown();
@@ -55,6 +61,12 @@ int main(){
 
     // Prepare variables
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    try{
+        LoadBlockFromFile("./blocks.cfg");
+    } catch(ios_base::failure &e){
+        printf("Blocks loading: %s", e.what());
+        return 1;
+    }
     NewCurrentBlock();
     // Game loop
     RenderScreen();
@@ -71,6 +83,16 @@ int main(){
     return 0;
 }
 
+void LoadBlockFromFile(string path){
+    ifstream in(path);
+    if (!in.is_open())
+        throw ios_base::failure("Cannot open file.");
+    string line;
+    Block* blockbuffer;
+    while (getline(in, line)){
+
+    }
+}
 bool InputHandler(){
     if (!_kbhit()) return false;
 
@@ -102,7 +124,7 @@ void MoveDown(){
     currentPos.y += 1;
     for(Vector2 &current : currentBlocks){
         Vector2 blockPos = current + currentPos;
-        if (blockPos.y >= G_HEIGHT || Blocks[(int)blockPos.y + 1][(int)blockPos.x] != 0){
+        if (blockPos.y >= G_HEIGHT || tilemap[(int)blockPos.y + 1][(int)blockPos.x] != 0){
             MakeCurrentStationary();
             return;
         }
@@ -110,18 +132,18 @@ void MoveDown(){
 }
 void MoveLeft(){
     int pos = currentPos.x + currentMaxOffsets[0];
-    if (pos <= 0 || Blocks[(int)currentPos.y][pos - 1] != 0) return;
+    if (pos <= 0 || tilemap[(int)currentPos.y][pos - 1] != 0) return;
     currentPos.x -= 1;
 }
 void MoveRight(){
     int pos = currentPos.x + currentMaxOffsets[1];
-    if (pos >= G_WIDTH - 1 || Blocks[(int)currentPos.y][pos + 1] != 0) return;
+    if (pos >= G_WIDTH - 1 || tilemap[(int)currentPos.y][pos + 1] != 0) return;
     currentPos.x += 1;
 }
 void MakeCurrentStationary(){
     set<int> rows = set<int>();
     for(Vector2 &current : currentBlocks){
-        Blocks[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
+        tilemap[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
         rows.insert((int)current.y + (int)currentPos.y);
     }
     // Check rows
@@ -133,21 +155,21 @@ void MakeCurrentStationary(){
 }
 bool IsRowValid(int &row){
     for (int i = 0; i < G_WIDTH; i++)
-        if (Blocks[row][i] == 0) return false;
+        if (tilemap[row][i] == 0) return false;
     return true;
 }
 void ClearRow(int &row){
     for (int i = 0; i < G_WIDTH; i++)
-        Blocks[row][i] = 0;
+        tilemap[row][i] = 0;
     for (int i = row - 1; i >= 0; i--){
         //Blocks[i + 1][0] = Blocks[i][0];
-        memcpy(&Blocks[i + 1][0], &Blocks[i][0], G_WIDTH * sizeof(int));
+        memcpy(&tilemap[i + 1][0], &tilemap[i][0], G_WIDTH * sizeof(int));
     }
 }
 void RenderScreen(){
     // Copy blocks data to buffer
     for (int i = 0; i < G_HEIGHT; i++)
-        memcpy(&renderbuffer[i][0], &Blocks[i][0], G_WIDTH * sizeof(int));
+        memcpy(&renderbuffer[i][0], &tilemap[i][0], G_WIDTH * sizeof(int));
     // Copy current to buffer
     for (Vector2 &current : currentBlocks){
         renderbuffer[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
