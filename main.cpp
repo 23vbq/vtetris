@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <ctime>
 
 #include <windows.h>
 
@@ -21,10 +22,18 @@ char input;
 
 int Blocks[G_HEIGHT][G_WIDTH] = { {0} };
 int** renderbuffer;
+unsigned int blockcolors[] = {
+    31, // Blue
+    47, // Green
+    63, // Cyan
+    79, // Red
+    95, // Purple
+};
+unsigned short blockcolors_size = 5;
 
 Vector2 currentPos = Vector2::zero;
 vector<Vector2> currentBlocks = vector<Vector2>();
-int currentColor = 0;
+unsigned int currentColor = 0;
 int currentMaxOffsets[3] = {0, 0, 0}; // Left, Right, Down
 
 bool InputHandler();
@@ -38,6 +47,7 @@ void ClearRow(int &row);
 void RenderScreen();
 
 int main(){
+    srand(time(NULL));
     // Allocate render buffer
     renderbuffer = (int**)malloc(G_HEIGHT * sizeof(int*));
     for (int i = 0; i < G_HEIGHT; i++)
@@ -83,7 +93,7 @@ void NewCurrentBlock(){
     currentBlocks.push_back(Vector2(0, 0));
     // currentBlocks.push_back(Vector2(-1, 0));
     // currentBlocks.push_back(Vector2(1, 0));
-    currentColor = 4;
+    currentColor = blockcolors[rand() % blockcolors_size];
     currentMaxOffsets[0] = 0;
     currentMaxOffsets[1] = 0;
     currentMaxOffsets[2] = 0;
