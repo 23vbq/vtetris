@@ -10,6 +10,7 @@
 #include <set>
 #include <ctime>
 #include <string>
+#include <sstream>
 #include <fstream>
 
 #include <windows.h>
@@ -39,7 +40,7 @@ vector<Block> blocks = vector<Block>();
 Vector2 currentPos = Vector2::zero;
 vector<Vector2> currentBlocks = vector<Vector2>();
 unsigned int currentColor = 0;
-int currentMaxOffsets[3] = {0, 0, 0}; // Left, Right, Down
+int currentMaxOffsets[4] = {0}; // Left, Down, Right, Up
 
 void LoadBlockFromFile(string path);
 bool InputHandler();
@@ -63,8 +64,8 @@ int main(){
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     try{
         LoadBlockFromFile("./blocks.cfg");
-    } catch(ios_base::failure &e){
-        printf("Blocks loading: %s", e.what());
+    } catch(char const* e){
+        printf("Blocks loading: %s", e);
         return 1;
     }
     NewCurrentBlock();
@@ -86,11 +87,29 @@ int main(){
 void LoadBlockFromFile(string path){
     ifstream in(path);
     if (!in.is_open())
-        throw ios_base::failure("Cannot open file.");
+        throw "Cannot open file.";
     string line;
-    Block* blockbuffer;
+    stringstream ssline;
+    Block blockbuffer;
+    vector<int> vbuff = vector<int>();
+    blocks.clear();
     while (getline(in, line)){
-
+        if(line[0] == '#') continue;
+        vbuff.clear();
+        ssline = stringstream(line);
+        while (!ssline.eof()){
+            int x;
+            ssline>>x;
+            vbuff.push_back(x);
+        }
+        blockbuffer = Block(vbuff);
+        // Validate block
+        int *blockbuffer_offsets_ptr = blockbuffer.GetMaxOffsets(); // TODO Test with other values of G_WIDTH
+        if (blockbuffer_offsets_ptr[3] < 0 ||
+            blockbuffer_offsets_ptr[0] < G_WIDTH / 2 * -1 ||
+            blockbuffer_offsets_ptr[0] > G_WIDTH / 2)
+            throw "Invalid block - " + to_string(blocks.size()); // FIXME info not works
+        blocks.push_back(blockbuffer);
     }
 }
 bool InputHandler(){
@@ -112,13 +131,13 @@ bool InputHandler(){
 void NewCurrentBlock(){
     currentPos = Vector2(G_WIDTH / 2, 0);
     currentBlocks.clear();
-    currentBlocks.push_back(Vector2(0, 0));
-    // currentBlocks.push_back(Vector2(-1, 0));
-    // currentBlocks.push_back(Vector2(1, 0));
+    Block *bptr = &blocks[rand() % blocks.size()];
+    // Block *bptr = &blocks[2];
+    for (Vector2 &child : bptr->GetChilds()){
+        currentBlocks.push_back(child);
+    }
     currentColor = blockcolors[rand() % blockcolors_size];
-    currentMaxOffsets[0] = 0;
-    currentMaxOffsets[1] = 0;
-    currentMaxOffsets[2] = 0;
+    memcpy(&currentMaxOffsets[0], bptr->GetMaxOffsets(), 4 * sizeof(int));
 }
 void MoveDown(){
     currentPos.y += 1;
@@ -136,7 +155,7 @@ void MoveLeft(){
     currentPos.x -= 1;
 }
 void MoveRight(){
-    int pos = currentPos.x + currentMaxOffsets[1];
+    int pos = currentPos.x + currentMaxOffsets[2];
     if (pos >= G_WIDTH - 1 || tilemap[(int)currentPos.y][pos + 1] != 0) return;
     currentPos.x += 1;
 }
@@ -172,6 +191,7 @@ void RenderScreen(){
         memcpy(&renderbuffer[i][0], &tilemap[i][0], G_WIDTH * sizeof(int));
     // Copy current to buffer
     for (Vector2 &current : currentBlocks){
+        cout<<(int)current.y + (int)currentPos.y<<" "<<(int)current.x + (int)currentPos.x<<endl;
         renderbuffer[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
     }
     system("cls");

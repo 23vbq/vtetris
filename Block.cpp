@@ -8,6 +8,10 @@ Block::Block(){
     maxOffsets = new int[4];
 }
 Block::Block(std::vector<int> positions){
+    // Init
+    childs = std::vector<Vector2>();
+    maxOffsets = new int[4];
+    // Prepare
     int n = positions.size();
     if (n % 2 != 0)
         throw "Invalid length of loaded block.";
@@ -32,9 +36,9 @@ void Block::CalculateMaxOffsets(){
             maxOffsets[0] = (int)child.x;
         else if (child.x > maxOffsets[2])
             maxOffsets[2] = (int)child.x;
-        if (child.y < maxOffsets[1])
+        if (child.y > maxOffsets[1])
             maxOffsets[1] = (int)child.y;
-        else if (child.y > maxOffsets[3])
+        else if (child.y < maxOffsets[3])
             maxOffsets[3] = (int)child.y;
     }
 }
