@@ -45,6 +45,7 @@ int currentMaxOffsets[4] = {0}; // Left, Down, Right, Up
 void LoadBlockFromFile(string path);
 bool InputHandler();
 void NewCurrentBlock();
+bool GameOverCheck();
 void MoveDown();
 void MoveLeft();
 void MoveRight();
@@ -103,12 +104,6 @@ void LoadBlockFromFile(string path){
             vbuff.push_back(x);
         }
         blockbuffer = Block(vbuff);
-        // Validate block
-        int *blockbuffer_offsets_ptr = blockbuffer.GetMaxOffsets(); // TODO Test with other values of G_WIDTH
-        if (blockbuffer_offsets_ptr[3] < 0 ||
-            blockbuffer_offsets_ptr[0] < G_WIDTH / 2 * -1 ||
-            blockbuffer_offsets_ptr[0] > G_WIDTH / 2)
-            throw "Invalid block - " + to_string(blocks.size()); // FIXME info not works
         blocks.push_back(blockbuffer);
     }
 }
@@ -138,6 +133,18 @@ void NewCurrentBlock(){
     }
     currentColor = blockcolors[rand() % blockcolors_size];
     memcpy(&currentMaxOffsets[0], bptr->GetMaxOffsets(), 4 * sizeof(int));
+    if (GameOverCheck()){
+        game_loop = false; // TODO need more testing
+        currentBlocks.clear();
+    }
+}
+bool GameOverCheck(){
+    for (Vector2 &current : currentBlocks){
+        Vector2 pos = current + currentPos;
+        if (tilemap[(int)pos.y][(int)pos.x] != 0)
+            return true;
+    }
+    return false;
 }
 void MoveDown(){
     currentPos.y += 1;
@@ -191,8 +198,12 @@ void RenderScreen(){
         memcpy(&renderbuffer[i][0], &tilemap[i][0], G_WIDTH * sizeof(int));
     // Copy current to buffer
     for (Vector2 &current : currentBlocks){
-        cout<<(int)current.y + (int)currentPos.y<<" "<<(int)current.x + (int)currentPos.x<<endl;
-        renderbuffer[(int)current.y + (int)currentPos.y][(int)current.x + (int)currentPos.x] = currentColor;
+        Vector2 pos = current + currentPos;
+        // Check if can be rendered
+        if (pos.x < 0 || pos.x >= G_WIDTH) continue;
+        if (pos.y < 0 || pos.y >= G_HEIGHT) continue;
+        // Add to render
+        renderbuffer[(int)pos.y][(int)pos.x] = currentColor;
     }
     system("cls");
     for (int i = 0; i < G_HEIGHT; i++){
