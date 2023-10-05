@@ -132,12 +132,12 @@ bool InputHandler(){
     return false;
 }
 void NewCurrentBlock(){
-    currentPos = Vector2(G_WIDTH / 2, 0);
+    currentPos = Vector2(G_WIDTH / 2, G_HEIGHT - 2);
     currentBlocks.clear();
-    //Block *bptr = &blocks[rand() % blocks.size()];
-    int kb = 0; // FIXME debug
-    cin>>kb;
-    Block *bptr = &blocks[kb];
+    Block *bptr = &blocks[rand() % blocks.size()];
+    // int kb = 0; // FIXME debug
+    // cin>>kb;
+    // Block *bptr = &blocks[kb];
     for (Vector2 &child : bptr->GetChilds()){
         currentBlocks.push_back(child);
     }
@@ -157,10 +157,10 @@ bool GameOverCheck(){
     return false;
 }
 void MoveDown(){
-    currentPos.y += 1;
+    currentPos.y -= 1;
     for(Vector2 &current : currentBlocks){
         Vector2 blockPos = current + currentPos;
-        if (blockPos.y >= G_HEIGHT || tilemap[(int)blockPos.y + 1][(int)blockPos.x] != 0){
+        if (blockPos.y <= 0 || tilemap[(int)blockPos.y - 1][(int)blockPos.x] != 0){
             MakeCurrentStationary();
             return;
         }
@@ -224,9 +224,9 @@ bool IsRowValid(int &row){
 void ClearRow(int &row){
     for (int i = 0; i < G_WIDTH; i++)
         tilemap[row][i] = 0;
-    for (int i = row - 1; i >= 0; i--){
+    for (int i = row + 1; i < G_HEIGHT; i++){
         //Blocks[i + 1][0] = Blocks[i][0];
-        memcpy(&tilemap[i + 1][0], &tilemap[i][0], G_WIDTH * sizeof(int));
+        memcpy(&tilemap[i - 1][0], &tilemap[i][0], G_WIDTH * sizeof(int));
     }
 }
 void RenderScreen(){
@@ -243,7 +243,7 @@ void RenderScreen(){
         renderbuffer[(int)pos.y][(int)pos.x] = currentColor;
     }
     system("cls");
-    for (int i = 0; i < G_HEIGHT; i++){
+    for (int i = G_HEIGHT - 1; i >= 0; i--){
         printf("#");
         for (int j = 0; j < G_WIDTH; j++){
             if (renderbuffer[i][j] == 0){
