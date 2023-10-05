@@ -20,6 +20,8 @@
 
 using namespace std;
 
+string dc;
+
 HANDLE hConsole;
 bool game_loop = true;
 char input;
@@ -49,6 +51,7 @@ bool GameOverCheck();
 void MoveDown();
 void MoveLeft();
 void MoveRight();
+void RotateBlock();
 void MakeCurrentStationary();
 bool IsRowValid(int &row);
 void ClearRow(int &row);
@@ -76,7 +79,7 @@ int main(){
         InputHandler();
         MoveDown();
         RenderScreen();
-        Sleep(100);
+        Sleep(250);
     }
     // Free renderbuffer
     for (int i = 0; i < G_HEIGHT; i++)
@@ -115,19 +118,26 @@ bool InputHandler(){
         game_loop = false;
         return true;
     }
+    // Arrows - move
     if (input < 0){
         input = _getch();
         if (input == 75) MoveLeft();
         else if (input == 77) MoveRight();
         return true;
     }
+    // R - rotate
+    if (input == 114){
+        RotateBlock();
+    }
     return false;
 }
 void NewCurrentBlock(){
     currentPos = Vector2(G_WIDTH / 2, 0);
     currentBlocks.clear();
-    Block *bptr = &blocks[rand() % blocks.size()];
-    // Block *bptr = &blocks[2];
+    //Block *bptr = &blocks[rand() % blocks.size()];
+    int kb = 0; // FIXME debug
+    cin>>kb;
+    Block *bptr = &blocks[kb];
     for (Vector2 &child : bptr->GetChilds()){
         currentBlocks.push_back(child);
     }
@@ -165,6 +175,33 @@ void MoveRight(){
     int pos = currentPos.x + currentMaxOffsets[2];
     if (pos >= G_WIDTH - 1 || tilemap[(int)currentPos.y][pos + 1] != 0) return;
     currentPos.x += 1;
+}
+void RotateBlock(){
+    // FIXME Debug
+    dc = "";
+    for(Vector2 &child : currentBlocks){
+        dc += to_string((int)child.x) + " ";
+        dc += to_string((int)child.y) + "; ";
+    }
+    // Clockwise rotation
+    for (Vector2& child : currentBlocks){
+        // x = cos(90) * x + -sin(90) * y => 0 * x - 1 * y
+        float x = -1 * child.y;
+        // y = sin(90) * x + cos(90) * y => 1 * x + 0 * y
+        float y = child.x;
+        child = Vector2(x, y);
+    }
+    // FIXME Debug
+    dc = "";
+    for(Vector2 &child : currentBlocks){
+        dc += to_string((int)child.x) + " ";
+        dc += to_string((int)child.y) + "; ";
+    }
+    int l = currentMaxOffsets[3];
+    currentMaxOffsets[3] = currentMaxOffsets[2];
+    currentMaxOffsets[2] = currentMaxOffsets[1] * -1;
+    currentMaxOffsets[1] = currentMaxOffsets[0];
+    currentMaxOffsets[0] = l * -1;
 }
 void MakeCurrentStationary(){
     set<int> rows = set<int>();
