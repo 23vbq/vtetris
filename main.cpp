@@ -20,8 +20,6 @@
 
 using namespace std;
 
-string dc;
-
 HANDLE hConsole;
 bool game_loop = true;
 char input;
@@ -29,13 +27,15 @@ char input;
 int tilemap[G_HEIGHT][G_WIDTH] = { {0} };
 int** renderbuffer;
 unsigned int blockcolors[] = {
-    31, // Blue
-    47, // Green
-    63, // Cyan
-    79, // Red
-    95, // Purple
+    0x1F, // Blue
+    0x2F, // Green
+    0x3F, // Cyan (G,B)
+    0x4F, // Red
+    0x5F, // Purple (R,B)
+    0x6F, // (R,G)
+    0x7F, // Gray (R,G,B)
 };
-unsigned short blockcolors_size = 5;
+unsigned short blockcolors_size = 7;
 
 vector<Block> blocks = vector<Block>();
 
@@ -44,7 +44,7 @@ vector<Vector2> currentBlocks = vector<Vector2>();
 unsigned int currentColor = 0;
 int currentMaxOffsets[4] = {0}; // Left, Down, Right, Up
 
-void LoadBlockFromFile(string path);
+void LoadBlockFromFile(string);
 bool InputHandler();
 void NewCurrentBlock();
 bool GameOverCheck();
@@ -52,9 +52,10 @@ void MoveDown();
 void MoveLeft();
 void MoveRight();
 void RotateBlock();
+bool CanRotateBlock(vector<Vector2>&);
 void MakeCurrentStationary();
-bool IsRowValid(int &row);
-void ClearRow(int &row);
+bool IsRowValid(int&);
+void ClearRow(int&);
 void RenderScreen();
 
 int main(){
@@ -77,6 +78,7 @@ int main(){
     RenderScreen();
     while (game_loop){
         InputHandler();
+        FlushConsoleInputBuffer(hConsole);
         MoveDown();
         RenderScreen();
         Sleep(250);
@@ -114,6 +116,7 @@ bool InputHandler(){
     if (!_kbhit()) return false;
 
     input = _getch();
+    // ctrl+c
     if (input == 3){
         game_loop = false;
         return true;
@@ -129,6 +132,8 @@ bool InputHandler(){
     if (input == 114){
         RotateBlock();
     }
+    /*if (input == 116)
+        cout<<"aaa";*/
     return false;
 }
 void NewCurrentBlock(){
@@ -177,31 +182,36 @@ void MoveRight(){
     currentPos.x += 1;
 }
 void RotateBlock(){
-    // FIXME Debug
-    dc = "";
-    for(Vector2 &child : currentBlocks){
-        dc += to_string((int)child.x) + " ";
-        dc += to_string((int)child.y) + "; ";
-    }
-    // Clockwise rotation
-    for (Vector2& child : currentBlocks){
+    // Clockwise rotation with check
+    vector<Vector2> cbcopy(currentBlocks);
+    for (Vector2& child : cbcopy){
         // x = cos(90) * x + -sin(90) * y => 0 * x - 1 * y
         float x = -1 * child.y;
         // y = sin(90) * x + cos(90) * y => 1 * x + 0 * y
         float y = child.x;
         child = Vector2(x, y);
     }
-    // FIXME Debug
-    dc = "";
-    for(Vector2 &child : currentBlocks){
-        dc += to_string((int)child.x) + " ";
-        dc += to_string((int)child.y) + "; ";
-    }
+    if (!CanRotateBlock(cbcopy))
+        return;
+    currentBlocks = cbcopy;
+    // Set offsets
     int l = currentMaxOffsets[3];
     currentMaxOffsets[3] = currentMaxOffsets[2];
     currentMaxOffsets[2] = currentMaxOffsets[1] * -1;
     currentMaxOffsets[1] = currentMaxOffsets[0];
     currentMaxOffsets[0] = l * -1;
+}
+bool CanRotateBlock(vector<Vector2>& cb){
+    for (Vector2& child : cb){
+        Vector2 pos = child + currentPos;
+        if (pos.x >= G_WIDTH)
+            return false;
+        if (pos.x < 0 || pos.y < 0)
+            return false;
+        if (tilemap[(int)pos.y][(int)pos.x] != 0)
+            return false;
+    }
+    return true;
 }
 void MakeCurrentStationary(){
     set<int> rows = set<int>();
