@@ -1,10 +1,11 @@
 # vTETRIS
 
-Tetris created in cpp by _vbq
+Tetris created in cpp by 23vbq.
+Currently windows only!
 
 Build commands:
-## Windows:
-> g++ vtetris.cpp -o vtetris
-## Linux:
-> g++ vtetris.cpp -o vtetris
+## Normal:
+> make
+## Debug:
+> make debug
 
