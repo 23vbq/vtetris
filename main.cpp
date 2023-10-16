@@ -24,6 +24,8 @@ HANDLE hConsole;
 bool game_loop = true;
 char input;
 
+int score;
+
 int tilemap[G_HEIGHT][G_WIDTH] = { {0} };
 int** renderbuffer;
 unsigned int blockcolors[] = {
@@ -43,6 +45,7 @@ Vector2 currentPos = Vector2::zero;
 vector<Vector2> currentBlocks = vector<Vector2>();
 unsigned int currentColor = 0;
 int currentMaxOffsets[4] = {0}; // Left, Down, Right, Up
+bool spawnNew;
 
 void LoadBlockFromFile(string);
 bool InputHandler();
@@ -60,6 +63,7 @@ void RenderScreen();
 
 int main(){
     srand(time(NULL));
+    score = 0;
     // Allocate render buffer
     renderbuffer = (int**)malloc(G_HEIGHT * sizeof(int*));
     for (int i = 0; i < G_HEIGHT; i++)
@@ -73,13 +77,18 @@ int main(){
         printf("Blocks loading: %s", e);
         return 1;
     }
-    NewCurrentBlock();
+    spawnNew = true;
     // Game loop
     RenderScreen();
     while (game_loop){
+        bool spawnNewBuff = spawnNew;
+        if (spawnNewBuff){
+            NewCurrentBlock();
+        }
         InputHandler();
         FlushConsoleInputBuffer(hConsole);
-        MoveDown();
+        if (!spawnNewBuff)
+            MoveDown();
         RenderScreen();
         Sleep(250);
     }
@@ -137,7 +146,7 @@ bool InputHandler(){
     return false;
 }
 void NewCurrentBlock(){
-    currentPos = Vector2(G_WIDTH / 2, G_HEIGHT - 2);
+    currentPos = Vector2(G_WIDTH / 2, G_HEIGHT - 1);
     currentBlocks.clear();
     Block *bptr = &blocks[rand() % blocks.size()];
     // int kb = 0; // FIXME debug
@@ -149,9 +158,10 @@ void NewCurrentBlock(){
     currentColor = blockcolors[rand() % blockcolors_size];
     memcpy(&currentMaxOffsets[0], bptr->GetMaxOffsets(), 4 * sizeof(int));
     if (GameOverCheck()){
-        game_loop = false; // TODO need more testing
+        game_loop = false; // TODO need more testing , do testów
         currentBlocks.clear();
     }
+    spawnNew = false;
 }
 bool GameOverCheck(){
     for (Vector2 &current : currentBlocks){
@@ -162,7 +172,6 @@ bool GameOverCheck(){
     return false;
 }
 void MoveDown(){
-    currentPos.y -= 1;
     for(Vector2 &current : currentBlocks){
         Vector2 blockPos = current + currentPos;
         if (blockPos.y <= 0 || tilemap[(int)blockPos.y - 1][(int)blockPos.x] != 0){
@@ -170,6 +179,7 @@ void MoveDown(){
             return;
         }
     }
+    currentPos.y -= 1;
 }
 void MoveLeft(){
     int pos = currentPos.x + currentMaxOffsets[0];
@@ -220,11 +230,17 @@ void MakeCurrentStationary(){
         rows.insert((int)current.y + (int)currentPos.y);
     }
     // Check rows
-    for(int row : rows){
-        if (IsRowValid(row))
-            ClearRow(row);
+    int from = (int)currentPos.y + currentMaxOffsets[1], to = (int)currentPos.y + currentMaxOffsets[3];
+    for (int i = from; i <= to; i++){
+        if (IsRowValid(i)){
+            ClearRow(i);
+            score += (G_WIDTH - 1) * 10;
+            i--;
+            to--;
+        }
     }
-    NewCurrentBlock();
+    spawnNew = true;
+    //NewCurrentBlock();
 }
 bool IsRowValid(int &row){
     for (int i = 0; i < G_WIDTH; i++)
@@ -253,6 +269,7 @@ void RenderScreen(){
         renderbuffer[(int)pos.y][(int)pos.x] = currentColor;
     }
     system("cls");
+    printf("Score: %i\n\n", score);
     for (int i = G_HEIGHT - 1; i >= 0; i--){
         printf("#");
         for (int j = 0; j < G_WIDTH; j++){
